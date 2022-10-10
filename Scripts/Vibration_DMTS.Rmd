@@ -1,0 +1,196 @@
+---
+title: "Vibration_DMTS"
+author: "Authors removed for double-blind review"
+date: "2022-10-05"
+output:
+  html_document: null
+  toc: yes
+  pdf_document: default
+toc_float: yes
+toc_depth: 5
+highlight: tango
+theme: paper
+self_contained: yes
+mode: selfcontained
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+In this document we tested if free-moving honey bees could be trained using appetite-aversive conditioning to use the presence/absence of a vibration cue or the duration of a vibration cue to solve a symbolic delayed matching-to-sample task. This document provides details on data processing, statistical analysis and figures of the original manuscript submitted for peer review.
+
+The following code is written in the R programming language.
+
+# Libraries 
+
+## Install packages
+```{r eval=FALSE}
+install.packages("lme4")  # For fitting models
+install.packages("ggplot2") # For plotting
+```
+
+## Load packages
+
+```{r, message=FALSE, warning=FALSE}
+library(lme4) # For fitting models
+library(ggplot2) # For plotting
+```
+
+# Data
+
+```{r, message=FALSE, warning=FALSE}
+
+VIBDATA <- read.csv(
+  "../Data/VIBDATA.csv", header=TRUE)
+
+#Subset data
+
+VIBDATA$BEEID <- as.factor(VIBDATA$BEEID) # Treat Bee ID as factor
+CONTROL <- subset(VIBDATA, CONDITION == "CONTROL") # Control condition
+SDISCRETE <- subset(VIBDATA, CONDITION == "SPEAKER_DISCRETE") # 250 Hz 0 vs 3 seconds condition
+SCONT <- subset(VIBDATA, CONDITION == "SPEAKER_CONT") # 250 Hz 1 vs 3 seconds condition
+MDISCRETE <- subset(VIBDATA, CONDITION == "MOTOR_DISCRETE") #68 Hz 0 vs 3 seconds condition
+
+```
+
+
+# Generalized linear models
+
+
+```{r message=FALSE}
+
+# Exp 1: 250 Hz 0 vs 3 seconds condition
+
+lm1 <- glm(CHOICE~CNUM, family = binomial, data = MDISCRETE) 
+summary(lm1)
+
+# Exp 2: 250 Hz 1 vs 3 seconds condition
+
+lm2 <- glm(CHOICE~CNUM, family = binomial, data = SDISCRETE) 
+summary(lm2)
+
+# Exp 3: 68 Hz 0 vs 3 seconds condition
+
+lm3 <- glm(CHOICE~CNUM, family = binomial, data = SCONT) 
+summary(lm3)
+
+# Exp 4: Control condition
+
+lm4 <- glm(CHOICE~CNUM, family = binomial, data = CONTROL) 
+summary(lm4)
+```
+
+# Generate Figure 2 
+
+## Calculate predicted data points using lm1,lm2,lm3, and lm4
+```{r}
+
+##### Generate predicted data points for Exp 1: 68 Hz 0 vs 3 seconds ####
+
+choicenumlm  <- data.frame (CHOICENUM = seq(1,100, length.out = 100)) # Create dataframe from 1 to 100
+Xgc1 <- model.matrix(~CHOICENUM, data = choicenumlm) # Create matrix of choice number
+coeff <- c(0.019851, 0.001034) # Create vector of model coefficients pulled from lm1
+eta <- Xgc1 %*% coeff # Calculate predicted mean proportion of correct choices
+SE <- sqrt(diag(Xgc1 %*% vcov(lm1) %*% t(Xgc1))) # Calculate standard errors
+  
+  
+PREDLM <- data.frame (CNUM = choicenumlm$CHOICENUM, ETA  = eta, STDERR = SE) # Create and add to a new dataframe
+PREDLM$CONFINTLOW <-(PREDLM$ETA - 1.96*PREDLM$STDERR)  # Calculate confint lower bound
+PREDLM$CONFINTHIGH <-(PREDLM$ETA + 1.96*PREDLM$STDERR) # Calculate confint upper bound
+PREDLM$EXPETA <- (exp(PREDLM$ETA)/(1 + exp(PREDLM$ETA))) # Reverse the link function of the predicted mean proportion of correct choices
+PREDLM$EXPCONFINTLOW <- (exp(PREDLM$CONFINTLOW)/(1 + exp(PREDLM$CONFINTLOW))) # Reverse the link function of the lower bound
+PREDLM$EXPCONFINTHIGH <- (exp(PREDLM$CONFINTHIGH)/(1 +exp(PREDLM$CONFINTHIGH))) # Reverse the link function of the upper bound
+
+
+
+#### Generate predicted data points for Exp 2: 250 Hz 0 vs 3 seconds ####
+  
+coeff2 <- c(5.739e-02, -8.007e-05) # Create vector of model coefficients pulled from lm2
+eta2 <- Xgc1 %*% coeff2 # Calculate predicted mean proportion of correct choices
+SE2 <- sqrt(diag(Xgc1 %*% vcov(lm2) %*% t(Xgc1))) # Calculate standard errors
+
+
+
+PREDLM$ETA2 <- eta2 # Add mean proportion of correct choices to existing dataframe
+PREDLM$STDERR2 <- SE2 # Add standard error to existing dataframe
+PREDLM$CONFINTLOW2 <- (PREDLM$ETA2 - 1.96*PREDLM$STDERR2) # Calculate confint lower bound 
+PREDLM$CONFINTHIGH2 <- (PREDLM$ETA2 + 1.96*PREDLM$STDERR2) # Calculate confint upper bound
+PREDLM$EXPETA2 <- (exp(PREDLM$ETA2)/(1 + exp(PREDLM$ETA2))) # Reverse the link function of the predicted mean proportion of correct choices
+PREDLM$EXPCONFINTLOW2 <- (exp(PREDLM$CONFINTLOW2)/(1 + exp(PREDLM$CONFINTLOW2))) # Reverse the link function of the lower bound
+PREDLM$EXPCONFINTHIGH2 <- (exp(PREDLM$CONFINTHIGH2)/(1 +exp(PREDLM$CONFINTHIGH2))) # Reverse the link function of the upper bound
+  
+
+
+#### Generate predicted data points for Exp 3: 250 Hz 1 vs 3 seconds ####  
+
+coeff3 <- c(0.0004838, 0.0003865) # Create vector of model coefficients pulled from lm3
+eta3 <- Xgc1 %*% coeff3 # Calculate predicted mean proportion of correct choices
+SE3 <- sqrt(diag(Xgc1 %*% vcov(lm3) %*% t(Xgc1))) # Calculate standard errors
+  
+  
+
+PREDLM$ETA3 <- eta3 # Add mean proportion of correct choices to existing dataframe
+PREDLM$STDERR3 <- SE3 # Add standard error to existing dataframe
+PREDLM$CONFINTLOW3 <- (PREDLM$ETA3 - 1.96*PREDLM$STDERR3) # Calculate confint lower bound 
+PREDLM$CONFINTHIGH3 <- (PREDLM$ETA3 + 1.96*PREDLM$STDERR3) # Calculate confint upper bound
+PREDLM$EXPETA3 <- (exp(PREDLM$ETA3)/(1 + exp(PREDLM$ETA3))) # Reverse the link function of the predicted mean proportion of correct choices
+PREDLM$EXPCONFINTLOW3 <- (exp(PREDLM$CONFINTLOW3)/(1 + exp(PREDLM$CONFINTLOW3))) # Reverse the link function of the lower bound 
+PREDLM$EXPCONFINTHIGH3 <- (exp(PREDLM$CONFINTHIGH3)/(1 +exp(PREDLM$CONFINTHIGH3))) # Reverse the link function of the upper bound 
+  
+  
+#### Generate predicted data points for Exp 4: colour control ####  
+  
+choicenumlm2  <- data.frame (CHOICENUM2 = seq(1,60, length.out = 60)) # Create new dataframe from 1 to 60
+Xgc2 <- model.matrix(~CHOICENUM2, data = choicenumlm2) # Create new matrix of choice number
+coeff4 <- c(-0.187623, 0.018451) # Create vector of model coefficients pulled from lm4
+eta4 <- Xgc2 %*% coeff4 # Calculate predicted mean proportion of correct choices
+SE4 <- sqrt(diag(Xgc2 %*% vcov(lm4) %*% t(Xgc2))) # Calculate standard errors 
+  
+
+
+PREDLM2 <- data.frame (CNUM = choicenumlm2$CHOICENUM2, ETA4  = eta4, STDERR4 = SE4) # Create and add to a new dataframe
+PREDLM2$ETA4 <- eta4 # Add mean proportion of correct choices to new dataframe
+PREDLM2$STDERR4 <- SE4 # Add standard error to new dataframe
+PREDLM2$CONFINTLOW4 <- (PREDLM2$ETA4 - 1.96*PREDLM2$STDERR4) # Calculate confint lower bound
+PREDLM2$CONFINTHIGH4 <- (PREDLM2$ETA4 + 1.96*PREDLM2$STDERR4) # Calculate confint upper bound
+PREDLM2$EXPETA4 <- (exp(PREDLM2$ETA4)/(1 + exp(PREDLM2$ETA4))) # Reverse the link function of the predicted mean proportion of correct choices
+PREDLM2$EXPCONFINTLOW4 <- (exp(PREDLM2$CONFINTLOW4)/(1 +exp(PREDLM2$CONFINTLOW4))) # Reverse the link function of the lower bound 
+PREDLM2$EXPCONFINTHIGH4<- (exp(PREDLM2$CONFINTHIGH4)/(1+exp(PREDLM2$CONFINTHIGH4))) # Reverse the link function of the upper bound
+  
+```
+
+## Plot predicted values using ggplot (Figure 2)
+
+```{r, fig.height = 6, fig.width = 10, fig.align = "center"} 
+
+ggplot() +
+    geom_line(aes(x = CNUM, y = EXPETA, linetype = "dotted"), size = 0.5, data = PREDLM) +
+    geom_line(aes(x = CNUM, y = EXPETA2, linetype = "dashed"), size = 0.5, data = PREDLM) +
+    geom_line(aes(x = CNUM, y = EXPETA3, linetype = "twodash"), size = 0.5, data = PREDLM) +
+    geom_line(aes(x = CNUM, y = EXPETA4, linetype = "solid"), size = 0.5, data = PREDLM2) +
+    geom_ribbon(aes(x = CNUM, ymin = EXPCONFINTLOW4, ymax = EXPCONFINTHIGH4), 
+                fill = "blue", alpha = 0.3, data = PREDLM2)  + # confint band
+    geom_ribbon(aes(x = CNUM, ymin = EXPCONFINTLOW, ymax = EXPCONFINTHIGH), 
+                fill = "purple", alpha = 0.3, data = PREDLM)  +
+    geom_ribbon(aes(x = CNUM, ymin = EXPCONFINTLOW2, ymax = EXPCONFINTHIGH2), 
+                fill = "red", alpha = 0.3, data = PREDLM)  +
+    geom_ribbon(aes(x = CNUM, ymin = EXPCONFINTLOW3, ymax = EXPCONFINTHIGH3), 
+                fill = "green", alpha = 0.3, data = PREDLM)  + 
+    theme(panel.grid.major = element_line(linetype = "blank"), 
+          panel.grid.minor = element_line(linetype = "blank"), 
+          panel.background = element_rect(fill = "gray96"))  + theme(axis.title = element_text(size = 18)) +
+    labs(x = "Choice number", y = "Mean proportion of correct choices (%)")+
+    theme(axis.text = element_text(size = 16), legend.position="bottom", legend.title = element_blank(), legend.text = element_text(size = 16), axis.title.y=element_text(margin=margin(0,20,0,0)), axis.title.x=element_text(margin=margin(20,0,0,0))) +
+scale_linetype_identity(guide = "legend", 
+                        breaks = c("solid", "dashed", "dotted", "twodash"), 
+                        labels = c("Exp 1: 68 Hz 0v3", "Exp 2: 250 Hz 0v3", "Exp 3: 250 Hz 1v3", "Exp 4: control")) 
+
+    
+```
+
+
