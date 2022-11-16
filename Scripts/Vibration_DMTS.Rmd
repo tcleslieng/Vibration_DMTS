@@ -1,19 +1,21 @@
 ---
-title: "Vibration_DMTS"
-author: "Authors removed for double-blind review"
+title: "Honey bee DMTS vibration study - statistical analysis and figures"
+author: "Leslie Ng on behalf of all authors"
 date: "2022-10-05"
 output:
   html_document: null
   toc: yes
   pdf_document: default
 toc_float: yes
-toc_depth: 5
+toc_depth: 3
 highlight: tango
 theme: paper
 self_contained: yes
 mode: selfcontained
 editor_options:
   chunk_output_type: console
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../Output") })
 ---
 
 ```{r setup, include=FALSE}
@@ -22,26 +24,28 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-In this document we tested if free-moving honey bees could be trained using appetite-aversive conditioning to use the presence/absence of a vibration cue or the duration of a vibration cue to solve a symbolic delayed matching-to-sample task. This document provides details on data processing, statistical analysis and figures of the original manuscript submitted for peer review.
+In this document we tested if free-moving honey bees could be trained using appetite-aversive conditioning to use the presence/absence of a vibration cue or the duration of a vibration cue to solve a symbolic delayed matching-to-sample task. This document provides details on data processing, statistical analysis and figures of the original manuscript submitted for peer review (titled: "Can honey bees use vibration cues to inform visual decisions in a symbolic delayed matching-to-sample task?").
 
 The following code is written in the R programming language.
 
 # Libraries 
 
-## Install packages
+### *Install packages*
 ```{r eval=FALSE}
 install.packages("lme4")  # For fitting models
 install.packages("ggplot2") # For plotting
 ```
 
-## Load packages
+### *Load packages*
 
 ```{r, message=FALSE, warning=FALSE}
 library(lme4) # For fitting models
 library(ggplot2) # For plotting
 ```
 
-# Data
+
+
+# Data importing
 
 ```{r, message=FALSE, warning=FALSE}
 
@@ -59,8 +63,8 @@ MDISCRETE <- subset(VIBDATA, CONDITION == "MOTOR_DISCRETE") #68 Hz 0 vs 3 second
 ```
 
 
-# Generalized linear models
 
+# Generalized linear models
 
 ```{r message=FALSE}
 
@@ -85,9 +89,11 @@ lm4 <- glm(CHOICE~CNUM, family = binomial, data = CONTROL)
 summary(lm4)
 ```
 
+
+
 # Generate Figure 2 
 
-## Calculate predicted data points using lm1,lm2,lm3, and lm4
+### *Calculate predicted data points using lm1, lm2, lm3, and lm4*
 ```{r}
 
 ##### Generate predicted data points for Exp 1: 68 Hz 0 vs 3 seconds ####
@@ -164,7 +170,7 @@ PREDLM2$EXPCONFINTHIGH4<- (exp(PREDLM2$CONFINTHIGH4)/(1+exp(PREDLM2$CONFINTHIGH4
   
 ```
 
-## Plot predicted values using ggplot (Figure 2)
+## *Plot predicted values using ggplot (Figure 2)*
 
 ```{r, fig.height = 6, fig.width = 10, fig.align = "center"} 
 
@@ -187,7 +193,7 @@ ggplot() +
     labs(x = "Choice number", y = "Mean proportion of correct choices (%)")+
     theme(axis.text = element_text(size = 16), legend.position="bottom", legend.title = element_blank(), legend.text = element_text(size = 16), axis.title.y=element_text(margin=margin(0,20,0,0)), axis.title.x=element_text(margin=margin(20,0,0,0))) +
 scale_linetype_identity(guide = "legend", 
-                        breaks = c("solid", "dashed", "dotted", "twodash"), 
+                        breaks = c("dotted", "dashed", "twodash", "solid"), 
                         labels = c("Exp 1: 68 Hz 0v3", "Exp 2: 250 Hz 0v3", "Exp 3: 250 Hz 1v3", "Exp 4: control")) 
 
     
